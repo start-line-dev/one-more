@@ -20,7 +20,7 @@ import type { LeagueInfo } from '@/lib/strength-standards'
 import { UI } from '@/lib/translations'
 import { cn } from '@/lib/utils'
 import { streakXpBonusPercent } from '@one-more/shared/streak-xp-multiplier'
-import { ArrowRight, Flame, Sparkles, Trophy, type LucideIcon } from 'lucide-react'
+import { ArrowRight, Flame, Sparkles, type LucideIcon } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 
@@ -323,7 +323,6 @@ function ShareLeagueCard({
                 exerciseImageUrl={exerciseImageUrl}
                 bodyPart={bodyPart}
                 target={target}
-                icon={exerciseImageUrl || bodyPart || target ? undefined : Trophy}
                 value={formatSharePerfHero(weight, reps)}
                 iconColor={glow}
                 iconFilter={leagueIconDropShadow(glow)}
@@ -386,7 +385,6 @@ function ShareRecordCard({
                 exerciseImageUrl={exerciseImageUrl}
                 bodyPart={bodyPart}
                 target={target}
-                icon={exerciseImageUrl || bodyPart || target ? undefined : Trophy}
                 value={formatSharePerfHero(weight, reps)}
                 iconColor={glow}
                 iconFilter={leagueIconDropShadow(glow)}

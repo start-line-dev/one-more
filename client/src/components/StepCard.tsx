@@ -11,6 +11,9 @@ export function StepCard(props: {
     onBack?: () => void;
     backLabel?: string;
     backAnalyticsLabel?: string;
+    onSkip?: () => void;
+    skipLabel?: string;
+    skipAnalyticsLabel?: string;
     animated?: boolean;
     children: ReactNode;
     className?: string;
@@ -24,6 +27,9 @@ export function StepCard(props: {
         onBack,
         backLabel = "Retour",
         backAnalyticsLabel,
+        onSkip,
+        skipLabel = "Passer",
+        skipAnalyticsLabel,
         animated = false,
         children,
         className,
@@ -33,6 +39,7 @@ export function StepCard(props: {
 
     const showChrome =
         Boolean(onBack) ||
+        Boolean(onSkip) ||
         Boolean(stepLabel) ||
         typeof progressPercent === "number";
 
@@ -63,17 +70,35 @@ export function StepCard(props: {
                             >
                                 <ArrowLeft className="size-5" />
                             </Button>
-                        ) : null}
+                        ) : (
+                            <span className="size-9 shrink-0" aria-hidden />
+                        )}
                         {typeof progressPercent === "number" ? (
                             <Progress
                                 value={Math.max(0, Math.min(100, progressPercent))}
                                 className="h-1.5 min-w-0 flex-1 bg-card [&_[data-slot=progress-indicator]]:bg-foreground dark:[&_[data-slot=progress-indicator]]:bg-accent"
                             />
-                        ) : null}
+                        ) : (
+                            <span className="min-w-0 flex-1" aria-hidden />
+                        )}
                         {stepLabel ? (
                             <p className="shrink-0 text-sm tabular-nums text-muted-foreground">
                                 {stepLabel}
                             </p>
+                        ) : null}
+                        {onSkip ? (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="shrink-0 -mr-2 rounded-full px-3 text-muted-foreground"
+                                onClick={onSkip}
+                                data-analytics-label={
+                                    skipAnalyticsLabel ?? "onboarding_skip"
+                                }
+                            >
+                                {skipLabel}
+                            </Button>
                         ) : null}
                     </div>
                 ) : null}

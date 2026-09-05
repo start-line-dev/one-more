@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils'
-import type { LucideIcon } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react'
 
 export function CelebrationModalShell({
@@ -31,16 +30,10 @@ export function CelebrationModalShell({
 }
 
 export function CelebrationHeroMetric({
-    icon: Icon,
-    iconColor,
-    iconDropShadow,
     badge,
     badgeClassName,
     ariaLabel,
 }: {
-    icon: LucideIcon
-    iconColor: string
-    iconDropShadow: string
     badge: ReactNode
     badgeClassName?: string
     ariaLabel: string
@@ -50,18 +43,9 @@ export function CelebrationHeroMetric({
             className="celebration-hero-anim relative inline-flex"
             aria-label={ariaLabel}
         >
-            <Icon
-                className="size-16 shrink-0"
-                style={{
-                    color: iconColor,
-                    filter: iconDropShadow,
-                }}
-                strokeWidth={1.5}
-                aria-hidden
-            />
             <span
                 className={cn(
-                    'celebration-count-anim absolute -bottom-0.5 left-1/2 flex max-w-[10rem] -translate-x-1/2 items-center justify-center rounded-full px-2.5 py-0.5 font-one-more text-sm font-bold italic tabular-nums shadow-md ring-2 ring-background',
+                    'celebration-count-anim inline-flex items-center justify-center rounded-full px-2.5 py-0.5 font-one-more text-sm font-bold italic tabular-nums shadow-md ring-2 ring-background',
                     badgeClassName,
                 )}
             >

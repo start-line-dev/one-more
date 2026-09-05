@@ -3,17 +3,18 @@ import {
   OnboardingSteps,
   bodyStepFromQuestion,
   gymStepFromSubStep,
+  intentStepFromQuestion,
   resolveOnboardingStepFromLocation,
 } from "./onboarding-tracking";
 
 describe("resolveOnboardingStepFromLocation", () => {
   it("maps record, body questions, account and gym query params", () => {
     expect(resolveOnboardingStepFromLocation("/onboarding", "")).toBe(
-      OnboardingSteps.RECORD_PICK,
+      OnboardingSteps.INTRO,
     );
     expect(
       resolveOnboardingStepFromLocation("/onboarding", "?step=intro"),
-    ).toBe(OnboardingSteps.RECORD_PICK);
+    ).toBe(OnboardingSteps.INTRO);
     expect(
       resolveOnboardingStepFromLocation("/onboarding", "?step=record"),
     ).toBe(OnboardingSteps.RECORD_PICK);
@@ -35,6 +36,18 @@ describe("resolveOnboardingStepFromLocation", () => {
     expect(
       resolveOnboardingStepFromLocation("/onboarding", "?step=body&bodyQ=2"),
     ).toBe(OnboardingSteps.BODY_HEIGHT);
+    expect(
+      resolveOnboardingStepFromLocation("/onboarding", "?step=body&bodyQ=3"),
+    ).toBe(OnboardingSteps.BODY_AGE);
+    expect(
+      resolveOnboardingStepFromLocation("/onboarding", "?step=intent&intentQ=0"),
+    ).toBe(OnboardingSteps.INTENT_GOAL);
+    expect(
+      resolveOnboardingStepFromLocation("/onboarding", "?step=intent&intentQ=1"),
+    ).toBe(OnboardingSteps.INTENT_EXPERIENCE);
+    expect(
+      resolveOnboardingStepFromLocation("/onboarding", "?step=intent&intentQ=2"),
+    ).toBe(OnboardingSteps.INTENT_FREQUENCY);
     expect(
       resolveOnboardingStepFromLocation("/onboarding", "?step=account"),
     ).toBe(OnboardingSteps.ACCOUNT_EMAIL);
@@ -64,10 +77,14 @@ describe("resolveOnboardingStepFromLocation", () => {
 });
 
 describe("body and gym step helpers", () => {
-  it("maps bodyQ and gym substeps", () => {
+  it("maps bodyQ, intentQ and gym substeps", () => {
     expect(bodyStepFromQuestion(0)).toBe(OnboardingSteps.BODY_GENDER);
     expect(bodyStepFromQuestion(1)).toBe(OnboardingSteps.BODY_WEIGHT);
     expect(bodyStepFromQuestion(2)).toBe(OnboardingSteps.BODY_HEIGHT);
+    expect(bodyStepFromQuestion(3)).toBe(OnboardingSteps.BODY_AGE);
+    expect(intentStepFromQuestion(0)).toBe(OnboardingSteps.INTENT_GOAL);
+    expect(intentStepFromQuestion(1)).toBe(OnboardingSteps.INTENT_EXPERIENCE);
+    expect(intentStepFromQuestion(2)).toBe(OnboardingSteps.INTENT_FREQUENCY);
     expect(gymStepFromSubStep("question")).toBe(OnboardingSteps.GYM_QUESTION);
     expect(gymStepFromSubStep("search")).toBe(OnboardingSteps.GYM_SEARCH);
   });

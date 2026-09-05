@@ -1,4 +1,9 @@
 import { apiFetch, refreshAccessToken } from "@/lib/api";
+import type {
+  SessionsPerWeekBand,
+  TrainingExperienceLevel,
+  TrainingGoal,
+} from "@/types";
 import {
   clearStoredSession,
   readStoredSession,
@@ -59,6 +64,10 @@ export async function registerWithEmail(params: {
   weightKg?: number;
   heightCm?: number;
   gender?: "male" | "female";
+  ageYears?: number;
+  trainingGoal?: TrainingGoal;
+  trainingExperience?: TrainingExperienceLevel;
+  sessionsPerWeek?: SessionsPerWeekBand;
 }): Promise<AuthSession> {
   return await apiFetch<AuthSession>("/auth/register", {
     method: "POST",

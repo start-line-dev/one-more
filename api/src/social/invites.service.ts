@@ -18,6 +18,10 @@ export type CreateProfileParams = {
   weightKg?: number;
   heightCm?: number;
   gender?: 'male' | 'female';
+  ageYears?: number;
+  trainingGoal?: string;
+  trainingExperience?: string;
+  sessionsPerWeek?: string;
 };
 
 @Injectable()
@@ -97,6 +101,10 @@ export class InvitesService {
       weightKg: params?.weightKg ?? 75,
       heightCm: params?.heightCm ?? 175,
       gender: params?.gender ?? 'male',
+      ageYears: params?.ageYears ?? null,
+      trainingGoal: params?.trainingGoal ?? null,
+      trainingExperience: params?.trainingExperience ?? null,
+      sessionsPerWeek: params?.sessionsPerWeek ?? null,
       inviteCode,
       username,
       searchableByName: true,

@@ -348,8 +348,22 @@
   animation: league-promo-trophy 0.7s ease-out both;
 }
 
+@keyframes onboarding-intro-chart {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.onboarding-intro-chart {
+  animation: onboarding-intro-chart 0.8s ease-out forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .league-promo-trophy-anim {
+    animation: none;
+  }
+
+  .onboarding-intro-chart {
     animation: none;
   }
 

@@ -134,4 +134,50 @@ describe('ProfileService', () => {
       service.updateUsername('user-1', 'taken_name'),
     ).rejects.toBeInstanceOf(ConflictException);
   });
+
+  it('upsertProfile persists training fields', async () => {
+    const saved = {
+      userId: 'user-1',
+      weightKg: 80,
+      heightCm: 180,
+      gender: 'male',
+      ageYears: 28,
+      trainingGoal: 'muscle',
+      trainingExperience: 'intermediate',
+      sessionsPerWeek: 'moderate',
+      firstName: null,
+      lastName: null,
+      avatarUrl: null,
+      username: null,
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    };
+    profilesRepo.upsert.mockResolvedValue(undefined);
+    profilesRepo.findOneOrFail.mockResolvedValue(saved);
+
+    const profile = await service.upsertProfile('user-1', {
+      weightKg: 80,
+      heightCm: 180,
+      gender: 'male',
+      ageYears: 28,
+      trainingGoal: 'muscle',
+      trainingExperience: 'intermediate',
+      sessionsPerWeek: 'moderate',
+    });
+
+    expect(profilesRepo.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ageYears: 28,
+        trainingGoal: 'muscle',
+        trainingExperience: 'intermediate',
+        sessionsPerWeek: 'moderate',
+      }),
+      ['userId'],
+    );
+    expect(profile).toMatchObject({
+      ageYears: 28,
+      trainingGoal: 'muscle',
+      trainingExperience: 'intermediate',
+      sessionsPerWeek: 'moderate',
+    });
+  });
 });

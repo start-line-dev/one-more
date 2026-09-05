@@ -40,6 +40,7 @@ export type {
 export {
   OnboardingSteps,
   bodyStepFromQuestion,
+  intentStepFromQuestion,
   clearOnboardingAnalyticsState,
   getOnboardingLastStep,
   getOnboardingSignupMethod,

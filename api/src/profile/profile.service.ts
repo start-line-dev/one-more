@@ -104,6 +104,10 @@ export class ProfileService {
       weightKg: profile.weightKg,
       heightCm: profile.heightCm,
       gender: profile.gender,
+      ageYears: profile.ageYears,
+      trainingGoal: profile.trainingGoal,
+      trainingExperience: profile.trainingExperience,
+      sessionsPerWeek: profile.sessionsPerWeek,
       firstName: profile.firstName,
       lastName: profile.lastName,
       avatarUrl: this.objectStorage.normalizePublicObjectUrl(profile.avatarUrl),
@@ -139,6 +143,18 @@ export class ProfileService {
       heightCm: body.heightCm,
       gender: body.gender,
     };
+    if (body.ageYears !== undefined) {
+      payload.ageYears = body.ageYears ?? null;
+    }
+    if (body.trainingGoal !== undefined) {
+      payload.trainingGoal = body.trainingGoal ?? null;
+    }
+    if (body.trainingExperience !== undefined) {
+      payload.trainingExperience = body.trainingExperience ?? null;
+    }
+    if (body.sessionsPerWeek !== undefined) {
+      payload.sessionsPerWeek = body.sessionsPerWeek ?? null;
+    }
     if (body.firstName !== undefined) {
       payload.firstName = body.firstName ?? null;
     }

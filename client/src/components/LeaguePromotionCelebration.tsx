@@ -2,7 +2,6 @@ import {
     CelebrationHeroMetric,
     CelebrationModalShell,
     formatPerfBadge,
-    leagueIconDropShadow,
 } from '@/components/celebration-modal-ui'
 import { ExerciseTitle } from '@/components/ExerciseTitle'
 import { RankBadge } from '@/components/RankBadge'
@@ -41,7 +40,7 @@ import type {
     StreakCelebrationPayload,
 } from '@/lib/xp-notifications'
 import { streakXpBonusPercent } from "@one-more/shared/streak-xp-multiplier"
-import { ArrowRight, Flame, Share2, Sparkles, Trophy } from 'lucide-react'
+import { ArrowRight, Flame, Share2, Sparkles } from 'lucide-react'
 import { useEffect, useState, type CSSProperties } from 'react'
 import { toast } from 'sonner'
 
@@ -64,9 +63,6 @@ function NewRecordCelebrationContent({
             style={{ ['--league-celebration']: glow } as CSSProperties}
         >
             <CelebrationHeroMetric
-                icon={Trophy}
-                iconColor={glow}
-                iconDropShadow={leagueIconDropShadow(glow)}
                 badge={formatPerfBadge(weight, reps)}
                 badgeClassName={
                     leagueAfter
@@ -115,15 +111,12 @@ function LeaguePromotionContent({
             style={{ ['--league-celebration']: leagueGlow } as CSSProperties}
         >
             <CelebrationHeroMetric
-                icon={Trophy}
-                iconColor={leagueGlow}
-                iconDropShadow={leagueIconDropShadow(leagueGlow)}
                 badge={<RankBadge league={nextLeague} size="sm" />}
                 badgeClassName="!bg-transparent !p-0 !shadow-none !ring-0 !font-sans !not-italic"
                 ariaLabel={`${UI.leaguePromotionCelebrationTitle}, ${nextLeague.label}`}
             />
             <DialogHeader className="flex w-full flex-col items-center gap-2 space-y-0 text-center sm:text-center">
-                <DialogTitle className="text-balance text-xl font-semibold tracking-tight">
+                <DialogTitle className="text-balance font-one-more text-xl font-semibold uppercase italic tracking-tight">
                     {UI.leaguePromotionCelebrationTitle}
                 </DialogTitle>
                 <DialogDescription asChild>

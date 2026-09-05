@@ -35,7 +35,11 @@ import {
     type FeedbackKind,
 } from '@/lib/feedback-api'
 import { openStoreListing } from '@/lib/app-review'
-import type { ThemePreference } from '@/lib/storage'
+import type {
+    SessionsPerWeekBand,
+    TrainingExperienceLevel,
+    TrainingGoal,
+} from '@/types'
 import { setUserProfileAndWait } from '@/lib/storage'
 import { UI } from '@/lib/translations'
 import { Capacitor } from '@capacitor/core'
@@ -53,6 +57,12 @@ export function SettingsPage() {
     const [weightKg, setWeightKg] = useState<string>('')
     const [heightCm, setHeightCm] = useState<string>('')
     const [gender, setGender] = useState<'male' | 'female'>('male')
+    const [ageYears, setAgeYears] = useState<string>('')
+    const [trainingGoal, setTrainingGoal] = useState<TrainingGoal>('muscle')
+    const [trainingExperience, setTrainingExperience] =
+        useState<TrainingExperienceLevel>('beginner')
+    const [sessionsPerWeek, setSessionsPerWeek] =
+        useState<SessionsPerWeekBand>('moderate')
     const [profileHydrated, setProfileHydrated] = useState(false)
     const [nameDialogOpen, setNameDialogOpen] = useState(false)
     const [feedbackOpen, setFeedbackOpen] = useState(false)
@@ -67,6 +77,10 @@ export function SettingsPage() {
         setWeightKg(String(p.weightKg))
         setHeightCm(String(p.heightCm))
         setGender(p.gender)
+        setAgeYears(p.ageYears != null ? String(p.ageYears) : '')
+        if (p.trainingGoal) setTrainingGoal(p.trainingGoal)
+        if (p.trainingExperience) setTrainingExperience(p.trainingExperience)
+        if (p.sessionsPerWeek) setSessionsPerWeek(p.sessionsPerWeek)
         setProfileHydrated(true)
     }, [profile])
 
@@ -83,9 +97,18 @@ export function SettingsPage() {
     const handleSave = () => {
         const w = parseFloat(weightKg)
         const h = parseFloat(heightCm)
+        const age = ageYears.trim() ? parseInt(ageYears, 10) : undefined
         if (!Number.isNaN(w) && w > 0 && !Number.isNaN(h) && h > 0) {
             void (async () => {
-                await setUserProfileAndWait({ weightKg: w, heightCm: h, gender })
+                await setUserProfileAndWait({
+                    weightKg: w,
+                    heightCm: h,
+                    gender,
+                    ageYears: age != null && !Number.isNaN(age) ? age : null,
+                    trainingGoal,
+                    trainingExperience,
+                    sessionsPerWeek,
+                })
                 await refreshProfile()
             })()
         }
@@ -305,6 +328,90 @@ export function SettingsPage() {
                                     <SelectContent>
                                         <SelectItem value="male">{UI.male}</SelectItem>
                                         <SelectItem value="female">{UI.female}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Input
+                                    id="settings-age"
+                                    label={UI.settingsAgeYears}
+                                    type="number"
+                                    inputMode="numeric"
+                                    min={16}
+                                    max={80}
+                                    step={1}
+                                    value={ageYears}
+                                    onChange={(e) => setAgeYears(e.target.value)}
+                                    onBlur={handleSave}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Label>{UI.settingsTrainingGoal}</Label>
+                                <Select
+                                    value={trainingGoal}
+                                    onValueChange={(v) => {
+                                        const next = v as TrainingGoal
+                                        setTrainingGoal(next)
+                                        void (async () => {
+                                            await setUserProfileAndWait({ trainingGoal: next })
+                                            await refreshProfile()
+                                        })()
+                                    }}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="muscle">{UI.onboardingGoalMuscle}</SelectItem>
+                                        <SelectItem value="strength">{UI.onboardingGoalStrength}</SelectItem>
+                                        <SelectItem value="weight_loss">{UI.onboardingGoalWeightLoss}</SelectItem>
+                                        <SelectItem value="athlete">{UI.onboardingGoalAthlete}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Label>{UI.settingsTrainingExperience}</Label>
+                                <Select
+                                    value={trainingExperience}
+                                    onValueChange={(v) => {
+                                        const next = v as TrainingExperienceLevel
+                                        setTrainingExperience(next)
+                                        void (async () => {
+                                            await setUserProfileAndWait({ trainingExperience: next })
+                                            await refreshProfile()
+                                        })()
+                                    }}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="beginner">{UI.onboardingExperienceBeginner}</SelectItem>
+                                        <SelectItem value="intermediate">{UI.onboardingExperienceIntermediate}</SelectItem>
+                                        <SelectItem value="advanced">{UI.onboardingExperienceAdvanced}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Label>{UI.settingsTrainingFrequency}</Label>
+                                <Select
+                                    value={sessionsPerWeek}
+                                    onValueChange={(v) => {
+                                        const next = v as SessionsPerWeekBand
+                                        setSessionsPerWeek(next)
+                                        void (async () => {
+                                            await setUserProfileAndWait({ sessionsPerWeek: next })
+                                            await refreshProfile()
+                                        })()
+                                    }}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="low">{UI.onboardingFrequencyLow}</SelectItem>
+                                        <SelectItem value="moderate">{UI.onboardingFrequencyModerate}</SelectItem>
+                                        <SelectItem value="high">{UI.onboardingFrequencyHigh}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

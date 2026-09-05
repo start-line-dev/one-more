@@ -77,7 +77,7 @@ export function PerformanceChart({ className, entries, exercise, onDelete, onUpd
         allEntries: allByDate.get(e.date) ?? [],
     }))
 
-    const lineColor = 'var(--primary)'
+    const lineColor = 'var(--foreground)'
     const gridColor = 'var(--border)'
     const tickColor = 'var(--muted-foreground)'
 

@@ -112,6 +112,10 @@ export class AuthService {
     weightKg?: number;
     heightCm?: number;
     gender?: 'male' | 'female';
+    ageYears?: number;
+    trainingGoal?: string;
+    trainingExperience?: string;
+    sessionsPerWeek?: string;
   }): Promise<AuthSession> {
     const email = params.email.trim().toLowerCase();
     const existing = await this.usersRepo.findOne({ where: { email } });
@@ -130,6 +134,10 @@ export class AuthService {
       weightKg: params.weightKg,
       heightCm: params.heightCm,
       gender: params.gender,
+      ageYears: params.ageYears,
+      trainingGoal: params.trainingGoal,
+      trainingExperience: params.trainingExperience,
+      sessionsPerWeek: params.sessionsPerWeek,
     });
     await this.referrals.applyReferralCodeOnSignup({
       newUserId: user.id,

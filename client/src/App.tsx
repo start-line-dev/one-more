@@ -221,7 +221,7 @@ function AccessGate({ children }: { children: React.ReactNode }) {
 
     if (auth.status === 'authenticated' && isAuthRoute) {
         if (onboardingNeeded) {
-            return <Navigate to="/onboarding?step=record" replace />
+            return <Navigate to="/onboarding" replace />
         }
         return <Navigate to="/home" replace />
     }
@@ -236,7 +236,7 @@ function AccessGate({ children }: { children: React.ReactNode }) {
         if (gymOnboardingStep) {
             return <Navigate to={gymOnboardingPath(gymOnboardingStep)} replace />
         }
-        return <Navigate to="/onboarding?step=record" replace />
+        return <Navigate to="/onboarding" replace />
     }
     return <>{children}</>
 }

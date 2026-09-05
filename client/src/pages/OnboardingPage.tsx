@@ -1,31 +1,38 @@
 import { AddPerfDrawer } from '@/components/AddPerfDrawer';
-import { HorizontalWheelPicker } from '@/components/HorizontalWheelPicker';
 import { OnboardingShell } from '@/components/OnboardingShell';
 import { StepCard } from '@/components/StepCard';
 import { Trackable } from '@/components/analytics/Trackable';
+import {
+    OnboardingChoiceList,
+    type OnboardingChoiceOption,
+} from '@/components/onboarding/OnboardingChoiceList';
 import { OnboardingExerciseList } from '@/components/onboarding/OnboardingExerciseList';
 import { OnboardingGymPermissionsStep } from '@/components/onboarding/OnboardingGymPermissionsStep';
 import { OnboardingGymStep } from '@/components/onboarding/OnboardingGymStep';
 import { OnboardingGymWaitStep } from '@/components/onboarding/OnboardingGymWaitStep';
+import { OnboardingIntro } from '@/components/onboarding/OnboardingIntro';
 import { OnboardingNotificationsStep } from '@/components/onboarding/OnboardingNotificationsStep';
 import { OnboardingRankReveal } from '@/components/onboarding/OnboardingRecordResults';
-import { OnboardingReveal, OnboardingStepLayout, onboardingEntrance, onboardingStepCardClassName } from '@/components/onboarding/onboarding-motion';
+import { OnboardingRulerPicker } from '@/components/onboarding/OnboardingRulerPicker';
+import { OnboardingVerticalWheelPicker } from '@/components/onboarding/OnboardingVerticalWheelPicker';
+import { OnboardingReveal, OnboardingStepLayout, onboardingStepCardClassName } from '@/components/onboarding/onboarding-motion';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUserProfileData } from '@/hooks/use-api-data';
 import { useAuth } from '@/hooks/use-auth';
 import { useMutateUserGym, useUserGymData } from '@/hooks/use-user-gym-data';
 import {
     OnboardingSteps,
     bodyStepFromQuestion,
+    intentStepFromQuestion,
     trackOnboardingStepCompleted,
     trackOnboardingStepSkipped,
     useOnboardingStepViewed,
+    type OnboardingStepId,
 } from '@/lib/analytics';
 import { unlockGymAccess } from '@/lib/gym-onboarding';
 import { gymOnboardingPath, resolveGymOnboardingStep } from '@/lib/gym-onboarding-route';
 import { fetchUserGym } from '@/lib/gyms-api';
-import { hapticSelectionChanged, primeHaptics } from '@/lib/haptics';
+import { primeHaptics } from '@/lib/haptics';
 import {
     isGymPermissionsNativeContext,
     isGymReselectOnboarding,
@@ -43,6 +50,7 @@ import {
 import { continueAfterOnboardingNotifications, isOnboardingNotificationsPath, ONBOARDING_NOTIFICATIONS_STEP_ENABLED, postAuthNavigateOptions, resolvePostAuthNavigation } from '@/lib/post-auth-navigation';
 import {
     beginOnboardingDraftSession,
+    clearPendingOnboardingRecord,
     discardPendingOnboardingDrafts,
     getGymOnboardingContext,
     getOnboardingPostAuthRedirect,
@@ -60,89 +68,62 @@ import {
 } from '@/lib/storage';
 import { getLeagueInfo } from '@/lib/strength-standards';
 import { UI } from '@/lib/translations';
-import { cn } from '@/lib/utils';
+import type {
+    SessionsPerWeekBand,
+    TrainingExperienceLevel,
+    TrainingGoal,
+} from '@/types';
 import { AuthPage } from '@/pages/AuthPage';
 import {
+    Dumbbell,
     Mars,
-    Venus
+    Scale,
+    Timer,
+    Trophy,
+    Venus,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useSWRConfig } from 'swr';
 
-const BODY_TOTAL = 2
-const ONBOARDING_TOTAL = 3
+const BODY_TOTAL = 4
+const INTENT_TOTAL = 3
 
-function OnboardingGenderRadios({
-    value,
-    onChange,
-}: {
-    value: 'male' | 'female'
-    onChange: (v: 'male' | 'female') => void
-}) {
-    const choices: {
-        id: 'male' | 'female'
-        label: string
-        Icon: typeof Mars
-    }[] = [
-            { id: 'male', label: UI.male, Icon: Mars },
-            { id: 'female', label: UI.female, Icon: Venus },
-        ]
-    return (
-        <OnboardingReveal delayMs={160}>
-            <div
-                className="grid grid-cols-2 gap-3"
-                role="radiogroup"
-                aria-label={UI.gender}
-            >
-                {choices.map(({ id, label, Icon }, index) => {
-                    const selected = value === id
-                    return (
-                        <button
-                            key={id}
-                            type="button"
-                            role="radio"
-                            aria-checked={selected}
-                            data-analytics-label={
-                                id === 'male'
-                                    ? 'onboarding_gender_male'
-                                    : 'onboarding_gender_female'
-                            }
-                            onClick={() => {
-                                if (!selected) void hapticSelectionChanged()
-                                onChange(id)
-                            }}
-                            className={onboardingEntrance(
-                                'w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                                'animate-in fade-in-0 slide-in-from-left-3 duration-350',
-                            )}
-                            style={{
-                                animationDelay: `${200 + index * 70}ms`,
-                            }}
-                        >
-                            <Card
-                                className={cn(
-                                    'items-center px-3 py-4 transition-colors',
-                                    selected
-                                        ? 'bg-accent text-accent-foreground'
-                                        : 'hover:bg-muted/40',
-                                )}
-                            >
-                                <CardHeader className="flex flex-col items-center gap-2 p-0">
-                                    <Icon
-                                        className="size-9 stroke-[1.75]"
-                                        aria-hidden
-                                    />
-                                    <CardTitle>{label}</CardTitle>
-                                </CardHeader>
-                            </Card>
-                        </button>
-                    )
-                })}
-            </div>
-        </OnboardingReveal>
-    )
+const GENDER_CHOICES: OnboardingChoiceOption<'male' | 'female'>[] = [
+    { id: 'male', label: UI.male, Icon: Mars, analyticsLabel: 'onboarding_gender_male' },
+    { id: 'female', label: UI.female, Icon: Venus, analyticsLabel: 'onboarding_gender_female' },
+]
+
+const GOAL_CHOICES: OnboardingChoiceOption<TrainingGoal>[] = [
+    { id: 'muscle', label: UI.onboardingGoalMuscle, Icon: Dumbbell, analyticsLabel: 'onboarding_goal_muscle' },
+    { id: 'strength', label: UI.onboardingGoalStrength, Icon: Trophy, analyticsLabel: 'onboarding_goal_strength' },
+    { id: 'weight_loss', label: UI.onboardingGoalWeightLoss, Icon: Scale, analyticsLabel: 'onboarding_goal_weight_loss' },
+    { id: 'athlete', label: UI.onboardingGoalAthlete, Icon: Timer, analyticsLabel: 'onboarding_goal_athlete' },
+]
+
+const EXPERIENCE_CHOICES: OnboardingChoiceOption<TrainingExperienceLevel>[] = [
+    { id: 'beginner', label: UI.onboardingExperienceBeginner, hint: UI.onboardingExperienceBeginnerHint, analyticsLabel: 'onboarding_experience_beginner' },
+    { id: 'intermediate', label: UI.onboardingExperienceIntermediate, hint: UI.onboardingExperienceIntermediateHint, analyticsLabel: 'onboarding_experience_intermediate' },
+    { id: 'advanced', label: UI.onboardingExperienceAdvanced, hint: UI.onboardingExperienceAdvancedHint, analyticsLabel: 'onboarding_experience_advanced' },
+]
+
+const FREQUENCY_CHOICES: OnboardingChoiceOption<SessionsPerWeekBand>[] = [
+    { id: 'low', label: UI.onboardingFrequencyLow, hint: UI.onboardingFrequencyLowHint, analyticsLabel: 'onboarding_frequency_low' },
+    { id: 'moderate', label: UI.onboardingFrequencyModerate, hint: UI.onboardingFrequencyModerateHint, analyticsLabel: 'onboarding_frequency_moderate' },
+    { id: 'high', label: UI.onboardingFrequencyHigh, hint: UI.onboardingFrequencyHighHint, analyticsLabel: 'onboarding_frequency_high' },
+]
+
+function onboardingProgressPercent(
+    step: string,
+    bodyQ: number,
+    intentQ: number,
+): number | undefined {
+    if (step === 'body') return 11 + bodyQ * 11
+    if (step === 'intent') return 55 + intentQ * 11
+    if (step === 'record') return 88
+    if (step === 'rank') return 100
+    return undefined
 }
 
 function OnboardingPage() {
@@ -161,6 +142,8 @@ function OnboardingPage() {
     const step =
         normalizedStep === 'body'
             ? 'body'
+            : normalizedStep === 'intent'
+                ? 'intent'
             : normalizedStep === 'account'
                 ? 'account'
                 : normalizedStep === 'gym'
@@ -175,8 +158,12 @@ function OnboardingPage() {
                                     ? 'rank'
                                     : normalizedStep === '1rm'
                                         ? 'body'
-                                        : 'record'
+                                        : normalizedStep === 'record' ||
+                                            normalizedStep === 'perf'
+                                            ? 'record'
+                                            : 'intro'
     const bodyQRaw = searchParams.get('bodyQ')
+    const intentQRaw = searchParams.get('intentQ')
     const fromSettings = isOnboardingGymFromSettings(
         normalizedStep,
         searchParams.get('from'),
@@ -189,13 +176,21 @@ function OnboardingPage() {
         BODY_TOTAL - 1,
         Math.max(0, Number.parseInt(bodyQRaw ?? '0', 10) || 0),
     )
+    const intentQ = Math.min(
+        INTENT_TOTAL - 1,
+        Math.max(0, Number.parseInt(intentQRaw ?? '0', 10) || 0),
+    )
     const viewedStep =
-        step === 'record'
+        step === 'intro'
+            ? OnboardingSteps.INTRO
+            : step === 'record'
             ? OnboardingSteps.RECORD_PICK
             : step === 'rank'
                 ? OnboardingSteps.RANK_REVEAL
                 : step === 'body'
                     ? bodyStepFromQuestion(bodyQ)
+                    : step === 'intent'
+                        ? intentStepFromQuestion(intentQ)
                     : step === 'account'
                         ? OnboardingSteps.ACCOUNT_EMAIL
                         : step === 'gym'
@@ -223,9 +218,23 @@ function OnboardingPage() {
         navigate(`/onboarding?step=body&bodyQ=${q}`, { replace: true })
     }
 
+    const goIntent = (q = 0) => {
+        navigate(`/onboarding?step=intent&intentQ=${q}`, { replace: true })
+    }
+
+    const goAccount = () => {
+        navigate('/onboarding?step=account', { replace: true })
+    }
+
     const [weightKg, setWeightKg] = useState(75)
     const [heightCm, setHeightCm] = useState(175)
+    const [ageYears, setAgeYears] = useState(25)
     const [gender, setGender] = useState<'male' | 'female'>('male')
+    const [trainingGoal, setTrainingGoal] = useState<TrainingGoal>('muscle')
+    const [trainingExperience, setTrainingExperience] =
+        useState<TrainingExperienceLevel>('beginner')
+    const [sessionsPerWeek, setSessionsPerWeek] =
+        useState<SessionsPerWeekBand>('moderate')
     const [unlockingGym, setUnlockingGym] = useState(false)
     const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null)
     const [perfDrawerOpen, setPerfDrawerOpen] = useState(false)
@@ -274,16 +283,20 @@ function OnboardingPage() {
     }, [step])
 
     useEffect(() => {
-        if (step !== 'body') return
+        if (step !== 'body' && step !== 'intent') return
         const p = profile ?? (hasPersistedUserProfile() ? getUserProfile() : null)
         if (!p) return
         setGender(p.gender)
         setWeightKg(p.weightKg)
         setHeightCm(p.heightCm)
+        if (p.ageYears != null) setAgeYears(p.ageYears)
+        if (p.trainingGoal) setTrainingGoal(p.trainingGoal)
+        if (p.trainingExperience) setTrainingExperience(p.trainingExperience)
+        if (p.sessionsPerWeek) setSessionsPerWeek(p.sessionsPerWeek)
     }, [profile, step])
 
     useEffect(() => {
-        if (step !== 'body' && step !== 'rank') return
+        if (step !== 'body' && step !== 'intent' && step !== 'rank') return
         primeHaptics()
     }, [step])
 
@@ -297,79 +310,159 @@ function OnboardingPage() {
 
     const canAdvanceWeight = weightKg >= 30 && weightKg <= 300
     const canAdvanceHeight = heightCm >= 100 && heightCm <= 250
+    const canAdvanceAge = ageYears >= 16 && ageYears <= 80
 
-    const finishBodyAndContinue = async () => {
-        if (!canAdvanceWeight || !canAdvanceHeight) return
-        const body = {
-            weightKg,
-            heightCm,
-            gender,
-        }
+    const profileDraft = () => ({
+        weightKg,
+        heightCm,
+        gender,
+        ageYears,
+        trainingGoal,
+        trainingExperience,
+        sessionsPerWeek,
+    })
+
+    const persistProfileDraft = () => {
+        const body = profileDraft()
         if (auth.status === 'authenticated') {
             setUserProfile(body)
         } else {
-            // Anonyme: le PUT échoue sans JWT, et applySession purge le cache.
-            // On persiste le draft pour le rejouer après inscription / login.
             setPendingOnboardingProfile(body)
             setUserProfile(body, { silent: true })
         }
         void mutate('profile')
-        trackOnboardingStepCompleted({
-            step: OnboardingSteps.BODY_HEIGHT,
-            gender,
-            weight_kg: weightKg,
-            height_cm: heightCm,
+    }
+
+    const skipToAccount = (skippedStep: OnboardingStepId) => {
+        clearPendingOnboardingRecord()
+        persistProfileDraft()
+        setOnboardingFirstExercisePending(true)
+        trackOnboardingStepSkipped({
+            step: skippedStep,
+            reason: 'skipped_to_account',
         })
-        goRank()
+        if (auth.status === 'authenticated') {
+            markOnboardingDone('/exercises')
+            navigate('/exercises', { replace: true })
+            return
+        }
+        goAccount()
     }
 
     const advanceBody = () => {
+        if (bodyQ === 0) {
+            trackOnboardingStepCompleted({
+                step: OnboardingSteps.BODY_GENDER,
+                gender,
+            })
+            goBody(1)
+            return
+        }
         if (bodyQ === 1) {
+            if (!canAdvanceWeight) return
             trackOnboardingStepCompleted({
                 step: OnboardingSteps.BODY_WEIGHT,
                 weight_kg: weightKg,
             })
-            void finishBodyAndContinue()
+            goBody(2)
             return
         }
+        if (bodyQ === 2) {
+            if (!canAdvanceHeight) return
+            persistProfileDraft()
+            trackOnboardingStepCompleted({
+                step: OnboardingSteps.BODY_HEIGHT,
+                height_cm: heightCm,
+            })
+            goBody(3)
+            return
+        }
+        if (!canAdvanceAge) return
+        persistProfileDraft()
         trackOnboardingStepCompleted({
-            step: OnboardingSteps.BODY_GENDER,
-            gender,
+            step: OnboardingSteps.BODY_AGE,
+            age_years: ageYears,
         })
-        goBody(bodyQ + 1)
+        goIntent(0)
+    }
+
+    const advanceIntent = () => {
+        if (intentQ === 0) {
+            trackOnboardingStepCompleted({
+                step: OnboardingSteps.INTENT_GOAL,
+                training_goal: trainingGoal,
+            })
+            goIntent(1)
+            return
+        }
+        if (intentQ === 1) {
+            trackOnboardingStepCompleted({
+                step: OnboardingSteps.INTENT_EXPERIENCE,
+                training_experience: trainingExperience,
+            })
+            goIntent(2)
+            return
+        }
+        persistProfileDraft()
+        trackOnboardingStepCompleted({
+            step: OnboardingSteps.INTENT_FREQUENCY,
+            sessions_per_week: sessionsPerWeek,
+        })
+        goRecord()
     }
 
     const backBody = () => {
         if (bodyQ <= 0) {
-            goRecord()
+            navigate('/onboarding?step=intro', { replace: true })
             return
         }
         goBody(bodyQ - 1)
     }
 
-    const onboardingStepNumber =
-        step === 'record'
-            ? 1
-            : step === 'body'
-                ? 2
-                : step === 'rank'
-                    ? 3
-                    : 2
+    const backIntent = () => {
+        if (intentQ <= 0) {
+            goBody(BODY_TOTAL - 1)
+            return
+        }
+        goIntent(intentQ - 1)
+    }
 
-    const stepIndicator = UI.onboardingStepIndicator
-        .replace('{current}', String(onboardingStepNumber))
-        .replace('{total}', String(ONBOARDING_TOTAL))
-    const bodyProgressPercent =
-        step === 'record'
-            ? 33
-            : step === 'body'
-                ? 55 + bodyQ * 20
-                : 100
+    const progressPercent = onboardingProgressPercent(step, bodyQ, intentQ)
 
     const bodyStepTitle =
         bodyQ === 0
             ? UI.onboardingBodyTitleGender
-            : UI.onboardingBodyTitleBuild
+            : bodyQ === 1
+                ? UI.onboardingBodyTitleWeight
+                : bodyQ === 2
+                    ? UI.onboardingBodyTitleHeight
+                    : UI.onboardingBodyTitleAge
+
+    const intentStepTitle =
+        intentQ === 0
+            ? UI.onboardingIntentTitleGoal
+            : intentQ === 1
+                ? UI.onboardingIntentTitleExperience
+                : UI.onboardingIntentTitleFrequency
+
+    const canSkipCurrentStep =
+        (step === 'body' && bodyQ === 3) ||
+        step === 'intent' ||
+        step === 'record'
+
+    const handleSkip = () => {
+        if (step === 'record') {
+            skipToAccount(OnboardingSteps.RECORD_PICK)
+            return
+        }
+        if (step === 'intent') {
+            skipToAccount(intentStepFromQuestion(intentQ))
+            return
+        }
+        if (step === 'body' && bodyQ === 3) {
+            skipToAccount(OnboardingSteps.BODY_AGE)
+        }
+    }
 
     const leagueInfo = useMemo(() => {
         if (!selectedExercise) return null
@@ -420,7 +513,7 @@ function OnboardingPage() {
             weight,
             reps,
         })
-        goBody(0)
+        goRank()
     }
 
     const beatRecord = () => {
@@ -566,9 +659,6 @@ function OnboardingPage() {
         if (rawStep === '1rm') {
             navigate('/onboarding?step=body&bodyQ=0', { replace: true })
         }
-        if (!rawStep || rawStep === 'intro') {
-            navigate('/onboarding?step=record', { replace: true })
-        }
     }, [navigate, rawStep])
 
     useEffect(() => {
@@ -590,6 +680,7 @@ function OnboardingPage() {
         if (auth.status !== 'authenticated') return
         if (userGymLoading) return
         if (
+            step === 'intro' ||
             step === 'gym-permissions' ||
             step === 'gym-wait' ||
             step === 'account' ||
@@ -645,13 +736,36 @@ function OnboardingPage() {
 
     return (
         <OnboardingShell>
-            {step === 'record' ? (
+            {step === 'intro' ? (
+                <OnboardingIntro
+                    onContinue={() => {
+                        trackOnboardingStepCompleted({
+                            step: OnboardingSteps.INTRO,
+                        })
+                        beginOnboardingDraftSession()
+                        goBody(0)
+                    }}
+                    onHasAccount={() => {
+                        trackOnboardingStepSkipped({
+                            step: OnboardingSteps.INTRO,
+                            reason: 'has_account',
+                        })
+                        discardPendingOnboardingDrafts()
+                        void finishOnboarding('/home')
+                    }}
+                />
+            ) : step === 'record' ? (
                 <Trackable section="onboarding" feature={OnboardingSteps.RECORD_PICK}>
                     <OnboardingStepLayout>
                         <StepCard
                             className={onboardingStepCardClassName}
-                            stepLabel={stepIndicator}
-                            progressPercent={bodyProgressPercent}
+                            onBack={() => goIntent(INTENT_TOTAL - 1)}
+                            backLabel={UI.back}
+                            backAnalyticsLabel="onboarding_record_back"
+                            onSkip={handleSkip}
+                            skipLabel={UI.onboardingSkip}
+                            skipAnalyticsLabel="onboarding_record_skip"
+                            progressPercent={progressPercent}
                             title={UI.onboardingRecordTitle}
                         >
                             <OnboardingReveal delayMs={80}>
@@ -664,24 +778,6 @@ function OnboardingPage() {
                                 <p className="text-xs text-muted-foreground">
                                     {UI.onboardingRecordMicro}
                                 </p>
-                            </OnboardingReveal>
-                            <OnboardingReveal delayMs={240}>
-                                <Button
-                                    type="button"
-                                    variant="link"
-                                    className="w-full text-xs text-muted-foreground"
-                                    data-analytics-label="onboarding_intro_has_account"
-                                    onClick={() => {
-                                        trackOnboardingStepSkipped({
-                                            step: OnboardingSteps.RECORD_PICK,
-                                            reason: 'has_account',
-                                        })
-                                        discardPendingOnboardingDrafts()
-                                        void finishOnboarding('/home')
-                                    }}
-                                >
-                                    {UI.switchToLogin}
-                                </Button>
                             </OnboardingReveal>
                         </StepCard>
                     </OnboardingStepLayout>
@@ -708,12 +804,11 @@ function OnboardingPage() {
                     <OnboardingStepLayout>
                         <StepCard
                             className={onboardingStepCardClassName}
-                            onBack={() => goBody(BODY_TOTAL - 1)}
+                            onBack={() => goRecord()}
                             backLabel={UI.back}
                             backAnalyticsLabel="onboarding_rank_back"
-                            stepLabel={stepIndicator}
-                            progressPercent={bodyProgressPercent}
-                            title={UI.  onboardingRankTitle}
+                            progressPercent={progressPercent}
+                            title={UI.onboardingRankTitle}
                         >
                             {leagueInfo && selectedExercise ? (
                                 <OnboardingRankReveal
@@ -758,67 +853,58 @@ function OnboardingPage() {
                             onBack={backBody}
                             backLabel={UI.back}
                             backAnalyticsLabel="onboarding_body_back"
-                            stepLabel={stepIndicator}
-                            progressPercent={bodyProgressPercent}
+                            onSkip={canSkipCurrentStep ? handleSkip : undefined}
+                            skipLabel={UI.onboardingSkip}
+                            skipAnalyticsLabel="onboarding_body_skip"
+                            progressPercent={progressPercent}
                             title={bodyStepTitle}
                         >
-                            {bodyQ === 0 && (
-                                <div className="space-y-3">
-                                    <OnboardingReveal delayMs={80}>
-                                        <p className="text-sm text-muted-foreground">
-                                            {UI.onboardingQuestionGenderHint}
-                                        </p>
-                                    </OnboardingReveal>
-                                    <OnboardingGenderRadios
-                                        value={gender}
-                                        onChange={setGender}
-                                    />
-                                    <OnboardingReveal delayMs={220}>
-                                        <p className="text-xs text-muted-foreground">
-                                            {UI.onboardingQuestionGenderMicro}
-                                        </p>
-                                    </OnboardingReveal>
-                                </div>
-                            )}
+                            {bodyQ === 0 ? (
+                                <OnboardingChoiceList
+                                    value={gender}
+                                    options={GENDER_CHOICES}
+                                    onChange={setGender}
+                                    ariaLabel={UI.gender}
+                                />
+                            ) : null}
 
-                            {bodyQ === 1 && (
-                                <div className="space-y-4">
-                                    <OnboardingReveal delayMs={80}>
-                                        <p className="text-sm text-muted-foreground">
-                                            {UI.onboardingQuestionBuildHint}
-                                        </p>
-                                    </OnboardingReveal>
-                                    <OnboardingReveal delayMs={160}>
-                                        <HorizontalWheelPicker
-                                            label={UI.bodyWeight}
-                                            unit=""
-                                            min={30}
-                                            max={300}
-                                            step={0.5}
-                                            value={weightKg}
-                                            onChange={setWeightKg}
-                                        />
-                                    </OnboardingReveal>
-                                    <OnboardingReveal delayMs={200}>
-                                        <HorizontalWheelPicker
-                                            label={UI.height}
-                                            unit=""
-                                            min={100}
-                                            max={250}
-                                            step={1}
-                                            value={heightCm}
-                                            onChange={setHeightCm}
-                                        />
-                                    </OnboardingReveal>
-                                    <OnboardingReveal delayMs={240}>
-                                        <p className="text-xs text-muted-foreground">
-                                            {UI.onboardingQuestionBuildMicro}
-                                        </p>
-                                    </OnboardingReveal>
-                                </div>
-                            )}
+                            {bodyQ === 1 ? (
+                                <OnboardingRulerPicker
+                                    value={weightKg}
+                                    onChange={setWeightKg}
+                                    min={30}
+                                    max={300}
+                                    step={0.5}
+                                    unit="kg"
+                                />
+                            ) : null}
 
-                            <OnboardingReveal delayMs={280} className="mt-auto">
+                            {bodyQ === 2 ? (
+                                <OnboardingVerticalWheelPicker
+                                    value={heightCm}
+                                    onChange={setHeightCm}
+                                    min={100}
+                                    max={250}
+                                    step={1}
+                                    unit="cm"
+                                />
+                            ) : null}
+
+                            {bodyQ === 3 ? (
+                                <OnboardingVerticalWheelPicker
+                                    value={ageYears}
+                                    onChange={setAgeYears}
+                                    min={16}
+                                    max={80}
+                                    step={1}
+                                    unit="ans"
+                                />
+                            ) : null}
+
+                            <OnboardingReveal delayMs={280} className="mt-auto space-y-3">
+                                <p className="text-center text-xs text-muted-foreground">
+                                    {UI.onboardingPrivacyHint}
+                                </p>
                                 <Button
                                     onClick={advanceBody}
                                     className="w-full"
@@ -828,13 +914,76 @@ function OnboardingPage() {
                                             : 'onboarding_body_next'
                                     }
                                     disabled={
-                                        bodyQ === 1 &&
-                                        (!canAdvanceWeight || !canAdvanceHeight)
+                                        (bodyQ === 1 && !canAdvanceWeight) ||
+                                        (bodyQ === 2 && !canAdvanceHeight) ||
+                                        (bodyQ === 3 && !canAdvanceAge)
                                     }
                                 >
-                                    {bodyQ === BODY_TOTAL - 1
-                                        ? UI.onboardingSeeRankCta
-                                        : UI.continue}
+                                    {UI.continue}
+                                </Button>
+                            </OnboardingReveal>
+                        </StepCard>
+                    </OnboardingStepLayout>
+                </Trackable>
+            ) : step === 'intent' ? (
+                <Trackable
+                    section="onboarding"
+                    feature={intentStepFromQuestion(intentQ)}
+                >
+                    <OnboardingStepLayout>
+                        <StepCard
+                            key={`intent-${intentQ}`}
+                            className={onboardingStepCardClassName}
+                            onBack={backIntent}
+                            backLabel={UI.back}
+                            backAnalyticsLabel="onboarding_intent_back"
+                            onSkip={handleSkip}
+                            skipLabel={UI.onboardingSkip}
+                            skipAnalyticsLabel="onboarding_intent_skip"
+                            progressPercent={progressPercent}
+                            title={intentStepTitle}
+                        >
+                            {intentQ === 0 ? (
+                                <OnboardingChoiceList
+                                    value={trainingGoal}
+                                    options={GOAL_CHOICES}
+                                    onChange={setTrainingGoal}
+                                    ariaLabel={UI.onboardingIntentTitleGoal}
+                                />
+                            ) : null}
+
+                            {intentQ === 1 ? (
+                                <OnboardingChoiceList
+                                    value={trainingExperience}
+                                    options={EXPERIENCE_CHOICES}
+                                    onChange={setTrainingExperience}
+                                    ariaLabel={UI.onboardingIntentTitleExperience}
+                                />
+                            ) : null}
+
+                            {intentQ === 2 ? (
+                                <OnboardingChoiceList
+                                    value={sessionsPerWeek}
+                                    options={FREQUENCY_CHOICES}
+                                    onChange={setSessionsPerWeek}
+                                    ariaLabel={UI.onboardingIntentTitleFrequency}
+                                />
+                            ) : null}
+
+                            <OnboardingReveal delayMs={280} className="mt-auto space-y-3">
+                                <p className="text-center text-xs text-muted-foreground">
+                                    {UI.onboardingPrivacyHint}
+                                </p>
+                                <Button
+                                    onClick={advanceIntent}
+                                    className="w-full"
+                                    data-analytics-label={
+                                        intentQ === INTENT_TOTAL - 1
+                                            ? 'onboarding_intent_continue'
+                                            : 'onboarding_intent_next'
+                                    }
+                                >
+                                    {UI.continue}
                                 </Button>
                             </OnboardingReveal>
                         </StepCard>

@@ -44,10 +44,23 @@ export interface PerformanceEntry {
   deletedAt?: string | null;
 }
 
+export type TrainingGoal = "muscle" | "strength" | "weight_loss" | "athlete";
+
+export type TrainingExperienceLevel =
+  | "beginner"
+  | "intermediate"
+  | "advanced";
+
+export type SessionsPerWeekBand = "low" | "moderate" | "high";
+
 export interface UserProfile {
   weightKg: number;
   heightCm: number;
   gender: "male" | "female";
+  ageYears?: number | null;
+  trainingGoal?: TrainingGoal | null;
+  trainingExperience?: TrainingExperienceLevel | null;
+  sessionsPerWeek?: SessionsPerWeekBand | null;
   firstName?: string;
   lastName?: string;
   avatarUrl?: string | null;

@@ -30,6 +30,18 @@ export class UserProfileEntity {
   @Column({ type: 'text', nullable: true })
   gender!: string | null;
 
+  @Column({ type: 'integer', nullable: true })
+  ageYears!: number | null;
+
+  @Column({ type: 'text', nullable: true })
+  trainingGoal!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  trainingExperience!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  sessionsPerWeek!: string | null;
+
   @Column({ type: 'text', nullable: true })
   firstName!: string | null;
 

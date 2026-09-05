@@ -20,6 +20,10 @@ function pendingBodyProfilePayload(): {
   weightKg?: number;
   heightCm?: number;
   gender?: "male" | "female";
+  ageYears?: number;
+  trainingGoal?: string;
+  trainingExperience?: string;
+  sessionsPerWeek?: string;
 } {
   const pending = peekPendingOnboardingProfile();
   if (!pending) return {};
@@ -27,6 +31,10 @@ function pendingBodyProfilePayload(): {
     weightKg: pending.weightKg,
     heightCm: pending.heightCm,
     gender: pending.gender,
+    ageYears: pending.ageYears ?? undefined,
+    trainingGoal: pending.trainingGoal ?? undefined,
+    trainingExperience: pending.trainingExperience ?? undefined,
+    sessionsPerWeek: pending.sessionsPerWeek ?? undefined,
   };
 }
 

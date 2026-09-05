@@ -3,11 +3,21 @@ import {
   IsOptional,
   IsString,
   IsBoolean,
+  IsIn,
+  Min,
+  Max,
   Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import {
+  MAX_AGE_YEARS,
+  MIN_AGE_YEARS,
+  SESSIONS_PER_WEEK_BANDS,
+  TRAINING_EXPERIENCE_LEVELS,
+  TRAINING_GOALS,
+} from './profile-training-fields.js';
 
 export class UpsertProfileDto {
   @IsNumber()
@@ -18,6 +28,24 @@ export class UpsertProfileDto {
 
   @IsString()
   gender!: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(MIN_AGE_YEARS)
+  @Max(MAX_AGE_YEARS)
+  ageYears?: number;
+
+  @IsOptional()
+  @IsIn([...TRAINING_GOALS])
+  trainingGoal?: (typeof TRAINING_GOALS)[number];
+
+  @IsOptional()
+  @IsIn([...TRAINING_EXPERIENCE_LEVELS])
+  trainingExperience?: (typeof TRAINING_EXPERIENCE_LEVELS)[number];
+
+  @IsOptional()
+  @IsIn([...SESSIONS_PER_WEEK_BANDS])
+  sessionsPerWeek?: (typeof SESSIONS_PER_WEEK_BANDS)[number];
 
   @IsOptional()
   @IsString()

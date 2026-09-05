@@ -168,6 +168,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           weightKg: bodyProfile?.weightKg,
           heightCm: bodyProfile?.heightCm,
           gender: bodyProfile?.gender,
+          ageYears: bodyProfile?.ageYears ?? undefined,
+          trainingGoal: bodyProfile?.trainingGoal ?? undefined,
+          trainingExperience: bodyProfile?.trainingExperience ?? undefined,
+          sessionsPerWeek: bodyProfile?.sessionsPerWeek ?? undefined,
         });
         applySession(session);
         applyPendingOnboardingProfileAfterAuth(true);

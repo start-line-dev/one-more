@@ -1,22 +1,31 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockAuthApi, trackPageErrors } from "./helpers";
+import { UI } from "../../src/lib/translations";
 
 const continueButton = (page: Page) =>
-  page.getByRole("button", { name: "Continuer", exact: true });
+  page.getByRole("button", { name: UI.continue, exact: true });
 
-async function completeRecordToBody(page: Page): Promise<void> {
-  await expect(page.getByText("On commence par quel record ?")).toBeVisible();
+async function completeBodyQuestions(page: Page): Promise<void> {
+  await page.getByRole("radio", { name: UI.female }).click();
+  await continueButton(page).click();
+  await continueButton(page).click();
+  await continueButton(page).click();
+  await continueButton(page).click();
+}
+
+async function completeIntentQuestions(page: Page): Promise<void> {
+  await continueButton(page).click();
+  await continueButton(page).click();
+  await continueButton(page).click();
+}
+
+async function completeRecordToRank(page: Page): Promise<void> {
+  await expect(page.getByText(UI.onboardingRecordTitle)).toBeVisible();
   await page.getByRole("button", { name: /Développé couché/ }).click();
 
   const drawer = page.getByRole("dialog", { name: "Rentre ton record" });
   await expect(drawer).toBeVisible();
   await drawer.getByRole("button", { name: "Enregistrer" }).click();
-}
-
-async function completeBodyToRank(page: Page): Promise<void> {
-  await page.getByRole("radio", { name: "Femme" }).click();
-  await continueButton(page).click();
-  await page.getByRole("button", { name: "Voir mon palier" }).click();
 }
 
 test("l'onboarding body (genre) est envoyé dans le register", async ({
@@ -29,6 +38,8 @@ test("l'onboarding body (genre) est envoyé dans le register", async ({
     weightKg?: number;
     heightCm?: number;
     gender?: string;
+    ageYears?: number;
+    trainingGoal?: string;
   }> = [];
   page.on("request", (request) => {
     if (request.method() !== "POST") return;
@@ -38,10 +49,11 @@ test("l'onboarding body (genre) est envoyé dans le register", async ({
     );
   });
 
-  await page.goto("/#/onboarding?step=record");
+  await page.goto("/#/onboarding?step=body&bodyQ=0");
 
-  await completeRecordToBody(page);
-  await completeBodyToRank(page);
+  await completeBodyQuestions(page);
+  await completeIntentQuestions(page);
+  await completeRecordToRank(page);
 
   await expect(page.getByRole("heading", { name: "Ton palier" })).toBeVisible();
   await page.getByRole("button", { name: "Créer mon compte et sauvegarder" }).click();
@@ -76,6 +88,8 @@ test("l'onboarding body (genre) est envoyé dans le register", async ({
     gender: "female",
     weightKg: 75,
     heightCm: 175,
+    ageYears: 25,
+    trainingGoal: "muscle",
   });
 
   await expect(page).toHaveURL(/#\/exercise\//, { timeout: 10_000 });
